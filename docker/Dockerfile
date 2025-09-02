@@ -25,6 +25,9 @@ RUN install-php-extensions \
   pcntl \
   @composer
 
+RUN pecl install swoole \
+  && docker-php-ext-enable swoole
+
 # Install build dependencies for GEOS
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -163,12 +166,12 @@ CMD ["sh", "-c", "php artisan octane:frankenphp --max-requests=250 --port=8000 -
 # Application release stage
 FROM base AS app-release
 ENTRYPOINT ["docker-php-entrypoint"]
-CMD ["sh", "-c", "php artisan octane:frankenphp --max-requests=250 --port=8000 --host=0.0.0.0"] 
+CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8000"]
 
 # Application stage
 FROM base AS app
-ENTRYPOINT ["docker-php-entrypoint"]
+ENTRYPOINT ["/sbin/ssm-parent", "-c", ".ssm-parent.yaml", "run", "--", "docker-php-entrypoint"]
 CMD ["sh", "-c", "php artisan octane:frankenphp --max-requests=250 --port=8000 --host=0.0.0.0"]
 
 # Final
-FROM app AS final
+FROM app-release AS final
