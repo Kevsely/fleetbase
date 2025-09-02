@@ -169,3 +169,6 @@ CMD ["sh", "-c", "php artisan octane:frankenphp --max-requests=250 --port=8000 -
 FROM base AS app
 ENTRYPOINT ["docker-php-entrypoint"]
 CMD ["sh", "-c", "php artisan octane:frankenphp --max-requests=250 --port=8000 --host=0.0.0.0"]
+
+# Final
+FROM app AS final
