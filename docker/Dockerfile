@@ -25,7 +25,15 @@ RUN install-php-extensions \
   pcntl \
   @composer
 
-RUN pecl install swoole \
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    libzstd-dev \
+    libbrotli-dev \
+    libcurl4-openssl-dev \
+    libmysqlclient-dev \
+    pkg-config \
+    build-essential \
+  && pecl install swoole \
   && docker-php-ext-enable swoole
 
 # Install build dependencies for GEOS
