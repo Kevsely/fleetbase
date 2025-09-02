@@ -30,7 +30,6 @@ RUN apt-get update && apt-get install -y \
     libzstd-dev \
     libbrotli-dev \
     libcurl4-openssl-dev \
-    libmysqlclient-dev \
     pkg-config \
     build-essential \
   && pecl install swoole \
