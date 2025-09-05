@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y git curl unzip \
 # Copier l’application et crontab
 COPY ./api /fleetbase/api
 COPY docker/crontab /fleetbase/crontab
-COPY .ssm-parent.yaml /fleetbase/.ssm-parent.yaml
+COPY ./api/.ssm-parent.yaml /fleetbase/.ssm-parent.yaml
 
 WORKDIR /fleetbase/api
 
