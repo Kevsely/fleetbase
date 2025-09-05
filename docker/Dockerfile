@@ -1,29 +1,36 @@
-# Base stage
-FROM dunglas/frankenphp:1.5.0-php8.2-bookworm AS base
+FROM php:8.2-fpm-bullseye
 
-# Install packages
-RUN apt-get update && apt-get install -y git nodejs npm uuid-runtime build-essential pkg-config libssl-dev libzstd-dev libbrotli-dev libcurl4-openssl-dev \
-    && mkdir -p /root/.ssh && ssh-keyscan github.com >> /root/.ssh/known_hosts
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
+    libgeos-dev libgeos++-dev autoconf build-essential pkg-config \
+    nodejs npm \
+    && docker-php-ext-install pdo_mysql bcmath gd zip intl sockets pcntl \
+    && pecl install redis apcu \
+    && docker-php-ext-enable redis apcu
 
-# PHP extensions (alléger)
-RUN install-php-extensions pdo_mysql gd bcmath redis intl zip gmp apcu opcache sockets pcntl @composer \
-    && pecl install swoole \
-    && docker-php-ext-enable swoole
+# Install composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# PHP config
-RUN sed -i -e 's/^memory_limit.*/memory_limit = 512M/' "$PHP_INI_DIR/php.ini"
+# Set working dir
+WORKDIR /var/www/html
 
-# Composer cache
-RUN mkdir -p /var/www/.cache/composer && chown -R www-data:www-data /var/www/.cache/composer
+# Copy composer files first (for better caching)
+COPY ./api/composer.json ./api/composer.lock ./
 
-# Workdir
-WORKDIR /fleetbase/api
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Copy app
-COPY --chown=www-data:www-data ./api /fleetbase/api
+# Copy application code
+COPY ./api .
 
-# Composer install
-RUN su www-data -s /bin/sh -c "composer install --no-scripts --optimize-autoloader --no-dev --no-cache"
+# Set permissions for storage and bootstrap cache
+RUN mkdir -p storage bootstrap/cache && \
+    chown -R www-data:www-data storage bootstrap/cache && \
+    chmod -R 775 storage bootstrap/cache
 
-# Octane Swoole start (1 worker, moins de RAM)
-CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8000", "--workers=1"]
+# Expose port
+EXPOSE 8000
+
+# Start Laravel
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
