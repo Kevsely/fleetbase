@@ -1,0 +1,17 @@
+FROM php:8.2-fpm-bullseye
+
+# Installer dépendances système et PHP
+RUN apt-get update && apt-get install -y git curl unzip \
+    && docker-php-ext-install pdo_mysql bcmath sockets pcntl \
+    && pecl install redis apcu \
+    && docker-php-ext-enable redis apcu
+
+# Copier l’application
+COPY ./api /fleetbase/api
+WORKDIR /fleetbase/api
+
+# Exposer un port pour Render
+EXPOSE 8081
+
+# Commande de démarrage
+CMD sh -c "php artisan queue:work --sleep=3 --tries=3 & tail -f /dev/null"
