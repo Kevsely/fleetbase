@@ -19,10 +19,12 @@ WORKDIR /var/www/html
 COPY ./api/composer.json ./api/composer.lock ./
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 # Copy application code
 COPY ./api .
+
+RUN php artisan package:discover --ansi || true
 
 # Set permissions for storage and bootstrap cache
 RUN mkdir -p storage bootstrap/cache && \
